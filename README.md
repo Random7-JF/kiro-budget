@@ -35,6 +35,19 @@ Core transactions are accessed through sqlc-generated queries; the newer
 budgets, recurring rules, and bills tables use small hand-written SQL helpers in
 the same `store` package. Schema and seed data live in `internal/store/*.sql`.
 
+### Project layout
+
+```
+cmd/
+  server/       HTTP server entry point
+  budgetctl/    Admin CLI (seed / reset / dump / stats)
+internal/
+  budget/       Pure domain logic (money, validation, aggregation, budgets, bills, months)
+  store/        SQLite data access, schema (schema.sql) and seed data (seed.sql)
+  web/          html/template templates and render layer
+  http/         Routing and HTMX-aware handlers
+```
+
 Money is stored and computed as integer cents to avoid floating-point rounding
 errors. Correctness of the domain layer is covered by property-based tests
 (`pgregory.net/rapid`) alongside example-based and integration tests.
@@ -69,6 +82,13 @@ go test ./...
 `budgetctl` is a small admin CLI for the SQLite database, useful for seeding a
 known dataset, inspecting the data, or clearing it between test runs.
 
+| Command  | Description                                                        |
+| -------- | ------------------------------------------------------------------ |
+| `seed`   | Replace all data with the built-in demo dataset, then print stats  |
+| `stats`  | Print row counts and overall income / expense / net totals         |
+| `dump`   | Print every row (transactions, budgets, recurring rules, bills)    |
+| `reset`  | Delete all data (schema preserved); requires `-force`              |
+
 ```sh
 # Replace all data with the built-in demo dataset (internal/store/seed.sql)
 go run ./cmd/budgetctl seed -db budget.db
@@ -86,6 +106,14 @@ go run ./cmd/budgetctl reset -db budget.db -force
 The `-db` flag defaults to `budget.db` (or `$BUDGET_DB`). The seed dataset lives
 in [`internal/store/seed.sql`](internal/store/seed.sql) and is embedded into the
 binary; `seed` clears existing data first, so it is idempotent.
+
+## Code style
+
+- Formatted with `gofmt`; run `gofmt -l internal cmd` to check.
+- Line endings are normalized to LF via `.gitattributes` for consistency across
+  platforms.
+- The demo dataset in `internal/store/seed.sql` uses integer cents and covers
+  May–July 2026 for one person (transactions, budgets, recurring rules, bills).
 
 ## Note on security
 
