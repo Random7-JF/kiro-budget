@@ -38,9 +38,9 @@ type afFailFlag struct {
 	failCommit atomic.Bool // force transaction Commit to fail when set
 }
 
-func (f *afFailFlag) armOp()      { f.failOp.Store(true) }
-func (f *afFailFlag) armCommit()  { f.failCommit.Store(true) }
-func (f *afFailFlag) disarm()     { f.failOp.Store(false); f.failCommit.Store(false) }
+func (f *afFailFlag) armOp()            { f.failOp.Store(true) }
+func (f *afFailFlag) armCommit()        { f.failCommit.Store(true) }
+func (f *afFailFlag) disarm()           { f.failOp.Store(false); f.failCommit.Store(false) }
 func (f *afFailFlag) opArmed() bool     { return f.failOp.Load() }
 func (f *afFailFlag) commitArmed() bool { return f.failCommit.Load() }
 

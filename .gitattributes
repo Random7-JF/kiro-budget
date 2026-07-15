@@ -1,0 +1,17 @@
+# Normalize line endings to LF for all text files so the repository is
+# consistent across platforms (Go tooling, gofmt, and diffs expect LF).
+* text=auto eol=lf
+
+*.go   text eol=lf
+*.sql  text eol=lf
+*.html text eol=lf
+*.md   text eol=lf
+*.mod  text eol=lf
+*.sum  text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+
+# Binary / generated data
+*.db      binary
+*.sqlite  binary
