@@ -10,19 +10,6 @@ import (
 	"github.com/budget-tracker/budget-tracker/internal/budget"
 )
 
-// registerConfigRoutes registers the budget and recurring-rule management
-// routes. These use plain form posts and redirect back to the viewed month
-// (Post/Redirect/Get), so the browser lands on a fresh, fully-rendered page.
-func (s *Server) registerConfigRoutes(mux *stdhttp.ServeMux) {
-	mux.HandleFunc("POST /budgets", s.handleSetBudget)
-	mux.HandleFunc("POST /budgets/delete", s.handleDeleteBudget)
-	mux.HandleFunc("POST /recurring", s.handleCreateRecurring)
-	mux.HandleFunc("POST /recurring/delete", s.handleDeleteRecurring)
-	mux.HandleFunc("POST /recurring/post", s.handlePostRecurring)
-	mux.HandleFunc("POST /bills", s.handleCreateBill)
-	mux.HandleFunc("POST /bills/delete", s.handleDeleteBill)
-}
-
 // redirectToMonth issues a See-Other redirect back to the view the form was
 // submitted from, preserving the selected month and bill-period when present.
 func (s *Server) redirectToMonth(w stdhttp.ResponseWriter, r *stdhttp.Request) {
@@ -42,11 +29,9 @@ func (s *Server) redirectToMonth(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 	stdhttp.Redirect(w, r, target, stdhttp.StatusSeeOther)
 }
 
-// handleSetBudget creates or updates a per-category monthly budget. Invalid
-// input (missing category or unparseable amount) is ignored and the user is
-// redirected back unchanged.
+// handleSetBudget creates or updates a per-category monthly budget.
 func (s *Server) handleSetBudget(w stdhttp.ResponseWriter, r *stdhttp.Request) {
-	bs, ok := s.store.(BudgetStore)
+	bs, ok := storeFrom(r.Context()).(BudgetStore)
 	if !ok {
 		s.renderError(w, stdhttp.StatusInternalServerError, "Budgets are not supported by this data store.")
 		return
@@ -72,7 +57,7 @@ func (s *Server) handleSetBudget(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 
 // handleDeleteBudget removes a category's budget.
 func (s *Server) handleDeleteBudget(w stdhttp.ResponseWriter, r *stdhttp.Request) {
-	bs, ok := s.store.(BudgetStore)
+	bs, ok := storeFrom(r.Context()).(BudgetStore)
 	if !ok {
 		s.renderError(w, stdhttp.StatusInternalServerError, "Budgets are not supported by this data store.")
 		return
@@ -91,10 +76,9 @@ func (s *Server) handleDeleteBudget(w stdhttp.ResponseWriter, r *stdhttp.Request
 	s.redirectToMonth(w, r)
 }
 
-// handleCreateRecurring adds a recurring transaction rule. Invalid input is
-// ignored and the user is redirected back unchanged.
+// handleCreateRecurring adds a recurring transaction rule.
 func (s *Server) handleCreateRecurring(w stdhttp.ResponseWriter, r *stdhttp.Request) {
-	rs, ok := s.store.(RecurringStore)
+	rs, ok := storeFrom(r.Context()).(RecurringStore)
 	if !ok {
 		s.renderError(w, stdhttp.StatusInternalServerError, "Recurring rules are not supported by this data store.")
 		return
@@ -128,7 +112,7 @@ func (s *Server) handleCreateRecurring(w stdhttp.ResponseWriter, r *stdhttp.Requ
 
 // handleDeleteRecurring removes a recurring rule by id.
 func (s *Server) handleDeleteRecurring(w stdhttp.ResponseWriter, r *stdhttp.Request) {
-	rs, ok := s.store.(RecurringStore)
+	rs, ok := storeFrom(r.Context()).(RecurringStore)
 	if !ok {
 		s.renderError(w, stdhttp.StatusInternalServerError, "Recurring rules are not supported by this data store.")
 		return
@@ -147,10 +131,9 @@ func (s *Server) handleDeleteRecurring(w stdhttp.ResponseWriter, r *stdhttp.Requ
 	s.redirectToMonth(w, r)
 }
 
-// handlePostRecurring materializes all recurring rules for the submitted month
-// (idempotently) and redirects back to that month.
+// handlePostRecurring materializes all recurring rules for the submitted month.
 func (s *Server) handlePostRecurring(w stdhttp.ResponseWriter, r *stdhttp.Request) {
-	rs, ok := s.store.(RecurringStore)
+	rs, ok := storeFrom(r.Context()).(RecurringStore)
 	if !ok {
 		s.renderError(w, stdhttp.StatusInternalServerError, "Recurring rules are not supported by this data store.")
 		return
@@ -171,10 +154,9 @@ func (s *Server) handlePostRecurring(w stdhttp.ResponseWriter, r *stdhttp.Reques
 	s.redirectToMonth(w, r)
 }
 
-// handleCreateBill adds a bill payee. Invalid input is ignored and the user is
-// redirected back unchanged.
+// handleCreateBill adds a bill payee.
 func (s *Server) handleCreateBill(w stdhttp.ResponseWriter, r *stdhttp.Request) {
-	bs, ok := s.store.(BillStore)
+	bs, ok := storeFrom(r.Context()).(BillStore)
 	if !ok {
 		s.renderError(w, stdhttp.StatusInternalServerError, "Bills are not supported by this data store.")
 		return
@@ -188,7 +170,6 @@ func (s *Server) handleCreateBill(w stdhttp.ResponseWriter, r *stdhttp.Request) 
 	cents, amountErr := budget.ParseAmount(r.PostFormValue("amount"))
 	freq, freqOK := budget.ParseFrequency(r.PostFormValue("frequency"))
 
-	// Due day is optional; when provided it must be 1..31.
 	due := 0
 	if dueStr := strings.TrimSpace(r.PostFormValue("due_day")); dueStr != "" {
 		d, err := strconv.Atoi(dueStr)
@@ -220,7 +201,7 @@ func (s *Server) handleCreateBill(w stdhttp.ResponseWriter, r *stdhttp.Request) 
 
 // handleDeleteBill removes a bill by id.
 func (s *Server) handleDeleteBill(w stdhttp.ResponseWriter, r *stdhttp.Request) {
-	bs, ok := s.store.(BillStore)
+	bs, ok := storeFrom(r.Context()).(BillStore)
 	if !ok {
 		s.renderError(w, stdhttp.StatusInternalServerError, "Bills are not supported by this data store.")
 		return

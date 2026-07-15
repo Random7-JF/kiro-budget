@@ -111,7 +111,7 @@ func TestCreateRoundTripProperty(t *testing.T) {
 
 		input := crGenTxn(t)
 
-		created, err := repo.CreateTransaction(ctx, input)
+		created, err := repo.CreateTransaction(ctx, testUID, input)
 		if err != nil {
 			t.Fatalf("CreateTransaction: %v", err)
 		}
@@ -123,7 +123,7 @@ func TestCreateRoundTripProperty(t *testing.T) {
 		}
 
 		// Persisting then retrieving yields the normalized input.
-		got, err := repo.GetTransaction(ctx, created.ID)
+		got, err := repo.GetTransaction(ctx, testUID, created.ID)
 		if err != nil {
 			t.Fatalf("GetTransaction(%d): %v", created.ID, err)
 		}
@@ -135,7 +135,7 @@ func TestCreateRoundTripProperty(t *testing.T) {
 		}
 
 		// The persisted transaction appears in the listing.
-		list, err := repo.ListTransactions(ctx)
+		list, err := repo.ListTransactions(ctx, testUID)
 		if err != nil {
 			t.Fatalf("ListTransactions: %v", err)
 		}

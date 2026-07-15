@@ -95,6 +95,8 @@ type LogView struct {
 // and log view models rendered by the "dashboard" and "log" fragments, plus the
 // category suggestions rendered by the "categories" datalist fragment.
 type PageView struct {
+	// Username of the signed-in user, shown in the header.
+	Username   string
 	Dashboard  DashboardView
 	Log        LogView
 	Categories []string
@@ -115,8 +117,14 @@ type PageView struct {
 	BillPeriod string
 }
 
-// Render executes the named template ("page", "dashboard", or "log") to w,
-// writing the rendered HTML. All user-supplied values are auto-escaped.
+// LoginView is the view model for the login page.
+type LoginView struct {
+	// Error is an optional message shown above the form (e.g. bad credentials).
+	Error string
+}
+
+// Render executes the named template ("page", "dashboard", "log", or "login")
+// to w, writing the rendered HTML. All user-supplied values are auto-escaped.
 func Render(w io.Writer, name string, data any) error {
 	if err := templates.ExecuteTemplate(w, name, data); err != nil {
 		return fmt.Errorf("web: render %q: %w", name, err)

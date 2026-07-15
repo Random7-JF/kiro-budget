@@ -95,7 +95,7 @@ func TestDeleteSemanticsProperty(t *testing.T) {
 		n := rapid.IntRange(1, 8).Draw(t, "numTxns")
 		ids := make([]int64, 0, n)
 		for i := 0; i < n; i++ {
-			created, err := repo.CreateTransaction(ctx, delGenTxn(t))
+			created, err := repo.CreateTransaction(ctx, testUID, delGenTxn(t))
 			if err != nil {
 				t.Fatalf("CreateTransaction: %v", err)
 			}
@@ -103,7 +103,7 @@ func TestDeleteSemanticsProperty(t *testing.T) {
 		}
 
 		// Record the stored set prior to deletion.
-		before, err := repo.ListTransactions(ctx)
+		before, err := repo.ListTransactions(ctx, testUID)
 		if err != nil {
 			t.Fatalf("ListTransactions (before): %v", err)
 		}
@@ -115,18 +115,18 @@ func TestDeleteSemanticsProperty(t *testing.T) {
 		idx := rapid.IntRange(0, len(ids)-1).Draw(t, "deleteIdx")
 		deletedID := ids[idx]
 
-		if err := repo.DeleteTransaction(ctx, deletedID); err != nil {
+		if err := repo.DeleteTransaction(ctx, testUID, deletedID); err != nil {
 			t.Fatalf("DeleteTransaction(%d): %v", deletedID, err)
 		}
 
 		// Requirement 4.1: the deleted transaction is no longer retrievable.
-		if _, err := repo.GetTransaction(ctx, deletedID); !errors.Is(err, ErrNotFound) {
+		if _, err := repo.GetTransaction(ctx, testUID, deletedID); !errors.Is(err, ErrNotFound) {
 			t.Fatalf("GetTransaction(%d) after delete: expected ErrNotFound, got %v", deletedID, err)
 		}
 
 		// Requirement 4.3: the resulting listing equals the prior listing with
 		// exactly that one transaction removed (all others retained).
-		after, err := repo.ListTransactions(ctx)
+		after, err := repo.ListTransactions(ctx, testUID)
 		if err != nil {
 			t.Fatalf("ListTransactions (after): %v", err)
 		}
@@ -168,7 +168,7 @@ func TestDeleteSemanticsProperty(t *testing.T) {
 			if id == deletedID {
 				continue
 			}
-			if _, err := repo.GetTransaction(ctx, id); err != nil {
+			if _, err := repo.GetTransaction(ctx, testUID, id); err != nil {
 				t.Fatalf("retained transaction id %d unexpectedly unretrievable: %v", id, err)
 			}
 		}

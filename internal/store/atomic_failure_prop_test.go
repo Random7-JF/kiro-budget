@@ -124,7 +124,7 @@ func TestAtomicFailedMutationProperty(t *testing.T) {
 		var ids []int64
 		for i := 0; i < seedCount; i++ {
 			input := afGenTxn(t, fmt.Sprintf("seed%d", i))
-			created, err := repo.CreateTransaction(ctx, input)
+			created, err := repo.CreateTransaction(ctx, testUID, input)
 			if err != nil {
 				t.Fatalf("seed %d create: %v", i, err)
 			}
@@ -132,7 +132,7 @@ func TestAtomicFailedMutationProperty(t *testing.T) {
 		}
 
 		// Snapshot the pre-operation store contents.
-		before, err := repo.ListTransactions(ctx)
+		before, err := repo.ListTransactions(ctx, testUID)
 		if err != nil {
 			t.Fatalf("snapshot ListTransactions: %v", err)
 		}
@@ -161,15 +161,15 @@ func TestAtomicFailedMutationProperty(t *testing.T) {
 		switch mutation {
 		case "create":
 			input := afGenTxn(t, "mut")
-			_, mutErr = repo.CreateTransaction(ctx, input)
+			_, mutErr = repo.CreateTransaction(ctx, testUID, input)
 		case "edit":
 			idx := rapid.IntRange(0, len(ids)-1).Draw(t, "editIdx")
 			input := afGenTxn(t, "mut")
 			input.ID = ids[idx]
-			_, mutErr = repo.UpdateTransaction(ctx, input)
+			_, mutErr = repo.UpdateTransaction(ctx, testUID, input)
 		case "delete":
 			idx := rapid.IntRange(0, len(ids)-1).Draw(t, "delIdx")
-			mutErr = repo.DeleteTransaction(ctx, ids[idx])
+			mutErr = repo.DeleteTransaction(ctx, testUID, ids[idx])
 		}
 
 		// Disarm so the verifying read succeeds against the real data.
@@ -181,7 +181,7 @@ func TestAtomicFailedMutationProperty(t *testing.T) {
 
 		// The store contents must equal the pre-operation snapshot exactly:
 		// rollback left no partial write.
-		after, err := repo.ListTransactions(ctx)
+		after, err := repo.ListTransactions(ctx, testUID)
 		if err != nil {
 			t.Fatalf("post-failure ListTransactions: %v", err)
 		}

@@ -17,6 +17,9 @@ and persists data in SQLite.
   view.
 - Filter and sort the transaction log; group by day, week, or month.
 - Selectable UI themes (Light, Dark, Ocean, Sunset).
+- **User accounts** with bcrypt-hashed passwords and cookie sessions; each
+  user's transactions, budgets, recurring rules, and bills are fully isolated.
+  A demo account (`test` / `password123`) is created automatically for local use.
 
 ## Architecture
 
@@ -24,16 +27,16 @@ The code is organized into layers:
 
 - `internal/budget` — pure domain logic (validation, aggregation, grouping,
   sorting, money-as-integer-cents, budgets, bills, months). No I/O.
-- `internal/store` — SQLite data access (sqlc-generated queries plus a
-  repository wrapper) and schema bootstrap.
+- `internal/store` — SQLite data access (hand-written, parameterized SQL in a
+  repository), users/sessions, schema bootstrap, and migrations.
+- `internal/auth` — password hashing (bcrypt), session tokens, demo-user setup.
 - `internal/web` — `html/template` templates and the render layer.
-- `internal/http` — routing and HTTP handlers (HTMX-aware).
+- `internal/http` — routing, auth middleware, and HTTP handlers (HTMX-aware).
 - `cmd/server` — server bootstrap.
 - `cmd/budgetctl` — admin CLI for seeding, inspecting, and clearing the database.
 
-Core transactions are accessed through sqlc-generated queries; the newer
-budgets, recurring rules, and bills tables use small hand-written SQL helpers in
-the same `store` package. Schema and seed data live in `internal/store/*.sql`.
+All data access uses hand-written parameterized SQL scoped by `user_id`. Schema
+and seed data live in `internal/store/*.sql`.
 
 ### Project layout
 
@@ -43,9 +46,10 @@ cmd/
   budgetctl/    Admin CLI (seed / reset / dump / stats)
 internal/
   budget/       Pure domain logic (money, validation, aggregation, budgets, bills, months)
-  store/        SQLite data access, schema (schema.sql) and seed data (seed.sql)
+  store/        SQLite data access, users/sessions, schema (schema.sql), seed data (seed.sql)
+  auth/         Password hashing, session tokens, demo-user bootstrap
   web/          html/template templates and render layer
-  http/         Routing and HTMX-aware handlers
+  http/         Routing, auth middleware, and HTMX-aware handlers
 ```
 
 Money is stored and computed as integer cents to avoid floating-point rounding
@@ -115,8 +119,21 @@ binary; `seed` clears existing data first, so it is idempotent.
 - The demo dataset in `internal/store/seed.sql` uses integer cents and covers
   May–July 2026 for one person (transactions, budgets, recurring rules, bills).
 
+## Accounts & sessions
+
+Passwords are hashed with bcrypt and sessions are tracked server-side with an
+HttpOnly cookie. On startup the server ensures a demo account exists:
+
+- Username: `test`
+- Password: `password123`
+
+Sign in at `/login`. Each account's financial data is isolated by `user_id`.
+An older single-user database is migrated automatically on first startup: the
+`user_id` columns are added and existing rows are assigned to the demo user.
+
 ## Note on security
 
-This is a single-user local application with **no authentication**. It is
-intended to run locally (bound to `127.0.0.1`). Do not expose it to a public
-network without adding access controls.
+There is no self-service registration UI, and it is intended to run locally
+(bound to `127.0.0.1`). Sessions are not currently marked `Secure` (no TLS in
+the local setup). Do not expose it to a public network without adding TLS and
+hardening account management.

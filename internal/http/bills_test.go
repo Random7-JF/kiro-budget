@@ -14,9 +14,8 @@ import (
 // redirect, and that the breakdown appears on the page.
 func TestFeatureBillCreateListDelete(t *testing.T) {
 	repo := itNewRepo(t)
-	h := NewServer(repo).Routes()
+	h := newTestServer(repo.ForUser(itUID))
 
-	// Create a monthly bill.
 	rec := doForm(t, h, http.MethodPost, "/bills", url.Values{
 		"payee": {"Electric Company"}, "amount": {"120.00"}, "frequency": {"monthly"},
 		"category": {"Utilities"}, "due_day": {"15"}, "month": {"2026-07"}, "billperiod": {"month"},
@@ -24,7 +23,7 @@ func TestFeatureBillCreateListDelete(t *testing.T) {
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("create bill status = %d, want 303", rec.Code)
 	}
-	bills, err := repo.ListBills(context.Background())
+	bills, err := repo.ListBills(context.Background(), itUID)
 	if err != nil || len(bills) != 1 {
 		t.Fatalf("bill not persisted: %+v (err %v)", bills, err)
 	}
@@ -32,7 +31,6 @@ func TestFeatureBillCreateListDelete(t *testing.T) {
 		t.Fatalf("bill stored incorrectly: %+v", bills[0])
 	}
 
-	// The breakdown shows the payee and the monthly total.
 	rec = do(t, h, http.MethodGet, "/?billperiod=month")
 	body := rec.Body.String()
 	for _, want := range []string{"Electric Company", "120.00", "Estimated Monthly bills"} {
@@ -41,14 +39,13 @@ func TestFeatureBillCreateListDelete(t *testing.T) {
 		}
 	}
 
-	// Delete it.
 	rec = doForm(t, h, http.MethodPost, "/bills/delete", url.Values{
 		"id": {itID(bills[0].ID)}, "month": {"2026-07"}, "billperiod": {"month"},
 	})
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("delete bill status = %d, want 303", rec.Code)
 	}
-	bills, _ = repo.ListBills(context.Background())
+	bills, _ = repo.ListBills(context.Background(), itUID)
 	if len(bills) != 0 {
 		t.Errorf("bill not deleted: %+v", bills)
 	}
@@ -58,12 +55,11 @@ func TestFeatureBillCreateListDelete(t *testing.T) {
 // the selected period.
 func TestFeatureBillBreakdownPeriods(t *testing.T) {
 	repo := itNewRepo(t)
-	// A $1200/year bill: $100/month, $1200/year.
 	bill := budget.Bill{Payee: "Annual Insurance", AmountCents: 120000, Frequency: budget.FreqYearly, Category: "Insurance"}
-	if _, err := repo.CreateBill(context.Background(), bill); err != nil {
+	if _, err := repo.CreateBill(context.Background(), itUID, bill); err != nil {
 		t.Fatalf("CreateBill: %v", err)
 	}
-	h := NewServer(repo).Routes()
+	h := newTestServer(repo.ForUser(itUID))
 
 	monthly := do(t, h, http.MethodGet, "/?billperiod=month").Body.String()
 	if !strings.Contains(monthly, "100.00") {

@@ -127,7 +127,7 @@ func TestEditRoundTripProperty(t *testing.T) {
 		spec := erGenEdit().Draw(t, "edit")
 
 		// Create the initial transaction.
-		created, err := repo.CreateTransaction(ctx, spec.initial)
+		created, err := repo.CreateTransaction(ctx, testUID, spec.initial)
 		if err != nil {
 			t.Fatalf("CreateTransaction: %v", err)
 		}
@@ -136,7 +136,7 @@ func TestEditRoundTripProperty(t *testing.T) {
 		edit := spec.edited
 		edit.ID = created.ID
 
-		updated, err := repo.UpdateTransaction(ctx, edit)
+		updated, err := repo.UpdateTransaction(ctx, testUID, edit)
 		if err != nil {
 			t.Fatalf("UpdateTransaction: %v", err)
 		}
@@ -148,7 +148,7 @@ func TestEditRoundTripProperty(t *testing.T) {
 		}
 
 		// Retrieving the transaction yields the edited values.
-		got, err := repo.GetTransaction(ctx, created.ID)
+		got, err := repo.GetTransaction(ctx, testUID, created.ID)
 		if err != nil {
 			t.Fatalf("GetTransaction: %v", err)
 		}
@@ -160,7 +160,7 @@ func TestEditRoundTripProperty(t *testing.T) {
 		}
 
 		// The listing also reflects the edited values.
-		list, err := repo.ListTransactions(ctx)
+		list, err := repo.ListTransactions(ctx, testUID)
 		if err != nil {
 			t.Fatalf("ListTransactions: %v", err)
 		}

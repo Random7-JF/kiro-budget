@@ -21,6 +21,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/budget-tracker/budget-tracker/internal/auth"
 	budgethttp "github.com/budget-tracker/budget-tracker/internal/http"
 	"github.com/budget-tracker/budget-tracker/internal/store"
 )
@@ -123,6 +124,11 @@ func buildHandler(cfg config) (http.Handler, func()) {
 	if err := repo.EnsureSchema(ctx); err != nil {
 		log.Printf("server: schema initialization failed: %v; entering degraded mode", err)
 		return budgethttp.NewDegradedHandler(), cleanup
+	}
+
+	// Ensure the demo user (test / password123) exists for local use.
+	if _, err := auth.EnsureDemoUser(ctx, repo); err != nil {
+		log.Printf("server: could not ensure demo user: %v", err)
 	}
 
 	log.Printf("server: schema ready; accepting requests")

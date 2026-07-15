@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/budget-tracker/budget-tracker/internal/budget"
+	"github.com/budget-tracker/budget-tracker/internal/store"
 )
 
 // fakeStore is an in-memory Store implementation for handler tests. When
@@ -56,8 +57,18 @@ func sampleTxns() []budget.Transaction {
 	}
 }
 
-func newTestServer(store Store) http.Handler {
-	return NewServer(store).Routes()
+// newTestServer builds an application handler that injects the given per-user
+// store (and a fixed test user) into each request, bypassing session auth. It
+// lets handler tests run against a fake or a real user-scoped store without
+// logging in. Auth itself is covered separately in auth_test.go.
+func newTestServer(st Store) http.Handler {
+	inject := func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			ctx := withUser(withStore(r.Context(), st), store.User{ID: 1, Username: "test"})
+			next(w, r.WithContext(ctx))
+		}
+	}
+	return (&Server{}).appMux(inject)
 }
 
 func do(t *testing.T, h http.Handler, method, target string) *httptest.ResponseRecorder {

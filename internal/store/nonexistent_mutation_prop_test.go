@@ -101,7 +101,7 @@ func TestNonExistentMutationProperty(t *testing.T) {
 		n := rapid.IntRange(0, 20).Draw(t, "n")
 		var maxID int64
 		for i := 0; i < n; i++ {
-			created, err := repo.CreateTransaction(ctx, nxGenTxn(t, fmt.Sprintf("seed%d", i)))
+			created, err := repo.CreateTransaction(ctx, testUID, nxGenTxn(t, fmt.Sprintf("seed%d", i)))
 			if err != nil {
 				t.Fatalf("seed create: %v", err)
 			}
@@ -111,7 +111,7 @@ func TestNonExistentMutationProperty(t *testing.T) {
 		}
 
 		// Record the stored set before attempting the bogus mutations.
-		before, err := repo.ListTransactions(ctx)
+		before, err := repo.ListTransactions(ctx, testUID)
 		if err != nil {
 			t.Fatalf("list before: %v", err)
 		}
@@ -131,19 +131,19 @@ func TestNonExistentMutationProperty(t *testing.T) {
 		// Attempt an update against the absent id.
 		editInput := nxGenTxn(t, "edit")
 		editInput.ID = absentID
-		_, updErr := repo.UpdateTransaction(ctx, editInput)
+		_, updErr := repo.UpdateTransaction(ctx, testUID, editInput)
 		if !errors.Is(updErr, ErrNotFound) {
 			t.Fatalf("update on absent id %d: expected ErrNotFound, got %v", absentID, updErr)
 		}
 
 		// Attempt a delete against the absent id.
-		delErr := repo.DeleteTransaction(ctx, absentID)
+		delErr := repo.DeleteTransaction(ctx, testUID, absentID)
 		if !errors.Is(delErr, ErrNotFound) {
 			t.Fatalf("delete on absent id %d: expected ErrNotFound, got %v", absentID, delErr)
 		}
 
 		// The stored set must be unchanged by either failed mutation.
-		after, err := repo.ListTransactions(ctx)
+		after, err := repo.ListTransactions(ctx, testUID)
 		if err != nil {
 			t.Fatalf("list after: %v", err)
 		}

@@ -122,7 +122,7 @@ func TestDurabilityAcrossRestartProperty(t *testing.T) {
 			switch op {
 			case "create":
 				input := durGenTxn(t, label)
-				created, err := repo1.CreateTransaction(ctx, input)
+				created, err := repo1.CreateTransaction(ctx, testUID, input)
 				if err != nil {
 					t.Fatalf("%s create: %v", label, err)
 				}
@@ -134,7 +134,7 @@ func TestDurabilityAcrossRestartProperty(t *testing.T) {
 				id := ids[idx]
 				input := durGenTxn(t, label)
 				input.ID = id
-				updated, err := repo1.UpdateTransaction(ctx, input)
+				updated, err := repo1.UpdateTransaction(ctx, testUID, input)
 				if err != nil {
 					t.Fatalf("%s update(id=%d): %v", label, id, err)
 				}
@@ -143,7 +143,7 @@ func TestDurabilityAcrossRestartProperty(t *testing.T) {
 			case "delete":
 				idx := rapid.IntRange(0, len(ids)-1).Draw(t, label+":delIdx")
 				id := ids[idx]
-				if err := repo1.DeleteTransaction(ctx, id); err != nil {
+				if err := repo1.DeleteTransaction(ctx, testUID, id); err != nil {
 					t.Fatalf("%s delete(id=%d): %v", label, id, err)
 				}
 				delete(committed, id)
@@ -152,7 +152,7 @@ func TestDurabilityAcrossRestartProperty(t *testing.T) {
 		}
 
 		// Capture the final listing from repo1 (the committed state pre-restart).
-		list1, err := repo1.ListTransactions(ctx)
+		list1, err := repo1.ListTransactions(ctx, testUID)
 		if err != nil {
 			_ = repo1.Close()
 			t.Fatalf("list repo1: %v", err)
@@ -191,7 +191,7 @@ func TestDurabilityAcrossRestartProperty(t *testing.T) {
 			t.Fatalf("ensure schema repo2: %v", err)
 		}
 
-		list2, err := repo2.ListTransactions(ctx)
+		list2, err := repo2.ListTransactions(ctx, testUID)
 		if err != nil {
 			t.Fatalf("list repo2: %v", err)
 		}

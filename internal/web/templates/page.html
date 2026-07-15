@@ -83,6 +83,10 @@
       border-radius: 999px; padding: 6px 10px; font-size: .82rem; font-weight: 600; cursor: pointer;
     }
     .theme-picker select option { color: #0f172a; }
+    .who { color: var(--header-text); font-size: .85rem; font-weight: 600; }
+    .logout-form { margin: 0; }
+    .logout-btn { background: rgba(255,255,255,.1); color: var(--header-text); border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 6px 12px; font-size: .82rem; font-weight: 600; cursor: pointer; }
+    .logout-btn:hover { background: rgba(255,255,255,.2); }
 
     .month-nav { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); padding: 6px 8px; border-radius: 999px; }
     .month-nav a { color: #fff; text-decoration: none; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; font-size: 1rem; }
@@ -230,6 +234,12 @@
           <option value="sunset">Sunset</option>
         </select>
       </label>
+      {{if .Username}}
+      <span class="who">{{.Username}}</span>
+      <form method="post" action="/logout" class="logout-form">
+        <button type="submit" class="logout-btn">Log out</button>
+      </form>
+      {{end}}
     </div>
   </header>
   <main>

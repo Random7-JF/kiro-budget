@@ -11,16 +11,15 @@ import (
 )
 
 // TestFeatureMonthScopedDashboard verifies the Overview totals reflect the
-// selected month rather than all-time (the #1 fix).
+// selected month rather than all-time.
 func TestFeatureMonthScopedDashboard(t *testing.T) {
 	repo := itNewRepo(t)
 	itSeed(t, repo,
 		budget.Transaction{Type: budget.TypeExpense, AmountCents: 5000, Date: date(2026, 6, 10), Category: "Groceries"},
 		budget.Transaction{Type: budget.TypeExpense, AmountCents: 7000, Date: date(2026, 7, 10), Category: "Groceries"},
 	)
-	h := NewServer(repo).Routes()
+	h := newTestServer(repo.ForUser(itUID))
 
-	// June scope: expense 50.00 only.
 	rec := do(t, h, http.MethodGet, "/dashboard?month=2026-06")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d", rec.Code)
@@ -36,7 +35,6 @@ func TestFeatureMonthScopedDashboard(t *testing.T) {
 		t.Errorf("expected June 2026 label:\n%s", body)
 	}
 
-	// July scope: expense 70.00 only.
 	rec = do(t, h, http.MethodGet, "/dashboard?month=2026-07")
 	if !strings.Contains(rec.Body.String(), "70.00") || strings.Contains(rec.Body.String(), "50.00") {
 		t.Errorf("July dashboard scoping wrong:\n%s", rec.Body.String())
@@ -50,14 +48,13 @@ func TestFeatureBudgetsProgress(t *testing.T) {
 	itSeed(t, repo,
 		budget.Transaction{Type: budget.TypeExpense, AmountCents: 8000, Date: date(2026, 7, 5), Category: "Groceries"},
 	)
-	if err := repo.SetBudget(context.Background(), "Groceries", 10000); err != nil {
+	if err := repo.SetBudget(context.Background(), itUID, "Groceries", 10000); err != nil {
 		t.Fatalf("SetBudget: %v", err)
 	}
-	h := NewServer(repo).Routes()
+	h := newTestServer(repo.ForUser(itUID))
 
 	rec := do(t, h, http.MethodGet, "/dashboard?month=2026-07")
 	body := rec.Body.String()
-	// 8000/10000 spent -> 80.00 / 100.00 and 80%.
 	for _, want := range []string{"budget-row", "80.00", "100.00", "80%"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("dashboard budget progress missing %q:\n%s", want, body)
@@ -69,7 +66,7 @@ func TestFeatureBudgetsProgress(t *testing.T) {
 // and redirect.
 func TestFeatureBudgetSetAndDelete(t *testing.T) {
 	repo := itNewRepo(t)
-	h := NewServer(repo).Routes()
+	h := newTestServer(repo.ForUser(itUID))
 
 	rec := doForm(t, h, http.MethodPost, "/budgets", url.Values{
 		"category": {"Dining"}, "amount": {"200.00"}, "month": {"2026-07"},
@@ -77,7 +74,7 @@ func TestFeatureBudgetSetAndDelete(t *testing.T) {
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("set budget status = %d, want 303", rec.Code)
 	}
-	budgets, err := repo.ListBudgets(context.Background())
+	budgets, err := repo.ListBudgets(context.Background(), itUID)
 	if err != nil || len(budgets) != 1 || budgets[0].Category != "Dining" || budgets[0].LimitCents != 20000 {
 		t.Fatalf("budget not persisted: %+v (err %v)", budgets, err)
 	}
@@ -88,7 +85,7 @@ func TestFeatureBudgetSetAndDelete(t *testing.T) {
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("delete budget status = %d, want 303", rec.Code)
 	}
-	budgets, _ = repo.ListBudgets(context.Background())
+	budgets, _ = repo.ListBudgets(context.Background(), itUID)
 	if len(budgets) != 0 {
 		t.Errorf("budget not deleted: %+v", budgets)
 	}
@@ -98,9 +95,8 @@ func TestFeatureBudgetSetAndDelete(t *testing.T) {
 // posting it for a month materializes a transaction idempotently.
 func TestFeatureRecurringCreateAndPost(t *testing.T) {
 	repo := itNewRepo(t)
-	h := NewServer(repo).Routes()
+	h := newTestServer(repo.ForUser(itUID))
 
-	// Create a recurring rule: Rent 1350.00 on the 1st.
 	rec := doForm(t, h, http.MethodPost, "/recurring", url.Values{
 		"type": {"expense"}, "amount": {"1350.00"}, "category": {"Rent"},
 		"description": {"Monthly rent"}, "day": {"1"}, "month": {"2026-07"},
@@ -108,17 +104,16 @@ func TestFeatureRecurringCreateAndPost(t *testing.T) {
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("create recurring status = %d, want 303", rec.Code)
 	}
-	rules, err := repo.ListRecurring(context.Background())
+	rules, err := repo.ListRecurring(context.Background(), itUID)
 	if err != nil || len(rules) != 1 {
 		t.Fatalf("recurring not persisted: %+v (err %v)", rules, err)
 	}
 
-	// Post for July 2026.
 	rec = doForm(t, h, http.MethodPost, "/recurring/post", url.Values{"month": {"2026-07"}})
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("post recurring status = %d, want 303", rec.Code)
 	}
-	txns, _ := repo.ListTransactions(context.Background())
+	txns, _ := repo.ListTransactions(context.Background(), itUID)
 	if len(txns) != 1 || txns[0].Category != "Rent" || txns[0].AmountCents != 135000 {
 		t.Fatalf("recurring not materialized: %+v", txns)
 	}
@@ -126,12 +121,11 @@ func TestFeatureRecurringCreateAndPost(t *testing.T) {
 		t.Errorf("recurring date = %q, want 2026-07-01", got)
 	}
 
-	// Posting again for the same month is idempotent (no duplicate).
 	rec = doForm(t, h, http.MethodPost, "/recurring/post", url.Values{"month": {"2026-07"}})
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("second post status = %d, want 303", rec.Code)
 	}
-	txns, _ = repo.ListTransactions(context.Background())
+	txns, _ = repo.ListTransactions(context.Background(), itUID)
 	if len(txns) != 1 {
 		t.Errorf("expected idempotent post (1 txn), got %d", len(txns))
 	}
