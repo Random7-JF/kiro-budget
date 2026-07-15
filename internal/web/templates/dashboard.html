@@ -1,0 +1,60 @@
+{{define "dashboard"}}
+<section id="dashboard" class="dashboard card" hx-swap-oob="true">
+  <div class="dash-head">
+    <h2>Overview</h2>
+    {{if .MonthLabel}}<span class="month-pill">{{.MonthLabel}}</span>{{end}}
+  </div>
+  {{if .TotalsUnavailable}}
+  <p class="totals-unavailable" role="alert">Totals are currently unavailable.</p>
+  {{else}}
+  <dl class="totals">
+    <div class="total total-income">
+      <dt>Income</dt>
+      <dd>{{money .Summary.TotalIncomeCents}}</dd>
+    </div>
+    <div class="total total-expense">
+      <dt>Expense</dt>
+      <dd>{{money .Summary.TotalExpenseCents}}</dd>
+    </div>
+    <div class="total net-balance">
+      <dt>Net Balance</dt>
+      <dd class="{{if lt .Summary.NetBalanceCents 0}}negative{{else}}positive{{end}}">{{money .Summary.NetBalanceCents}}</dd>
+    </div>
+  </dl>
+
+  {{if .Budgets}}
+  <h3>Budgets</h3>
+  <div class="budgets">
+    {{range .Budgets}}
+    <div class="budget-row {{if .Over}}over{{else if .Near}}near{{end}}">
+      <div class="budget-top">
+        <span class="budget-cat">{{.Category}}</span>
+        <span class="budget-figs">{{money .SpentCents}} / {{money .LimitCents}}</span>
+      </div>
+      <div class="budget-bar"><div class="budget-fill" style="width:{{.BarPercent}}%"></div></div>
+      <div class="budget-note">
+        {{if .Over}}<strong>Over by {{money (neg .RemainingCents)}}</strong>{{else}}{{money .RemainingCents}} left{{end}} &middot; {{.Percent}}%
+      </div>
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+
+  <h3>Spending by Category</h3>
+  {{$bars := chart .Summary}}
+  {{if $bars}}
+  <div class="chart">
+    {{range $bars}}
+    <div class="chart-row">
+      <span class="chart-label">{{.Category}}</span>
+      <span class="chart-track"><span class="chart-bar" style="width:{{.Percent}}%"></span></span>
+      <span class="chart-value">{{money .Cents}}</span>
+    </div>
+    {{end}}
+  </div>
+  {{else}}
+  <p class="no-categories">No expenses to break down yet.</p>
+  {{end}}
+  {{end}}
+</section>
+{{end}}

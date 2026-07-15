@@ -1,0 +1,560 @@
+{{define "page"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Budget Tracker</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
+  <script>
+    // Apply the saved theme before first paint to avoid a flash of the default.
+    (function () {
+      try {
+        var t = localStorage.getItem('bt-theme');
+        if (t) { document.documentElement.setAttribute('data-theme', t); }
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    /* ---- Light (default) ---- */
+    :root {
+      --page-bg: linear-gradient(180deg, #0f172a 0%, #1e293b 300px, #eef2f7 300px, #eef2f7 100%);
+      --header-text: #ffffff; --header-muted: #cbd5e1;
+      --surface: #ffffff; --surface-alt: #f8fafc; --border: #e2e8f0;
+      --text: #0f172a; --text-muted: #64748b;
+      --brand: #4f46e5; --brand-dark: #4338ca;
+      --income: #059669; --income-soft: #ecfdf5;
+      --expense: #dc2626; --expense-soft: #fef2f2;
+      --warn: #d97706; --warn-soft: #fffbeb;
+      --shadow: 0 1px 2px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.06);
+      --radius: 14px;
+    }
+    /* ---- Dark ---- */
+    [data-theme="dark"] {
+      --page-bg: #0b1120;
+      --header-text: #e2e8f0; --header-muted: #94a3b8;
+      --surface: #1e293b; --surface-alt: #0f172a; --border: #334155;
+      --text: #e2e8f0; --text-muted: #94a3b8;
+      --brand: #818cf8; --brand-dark: #6366f1;
+      --income: #34d399; --income-soft: rgba(52,211,153,.14);
+      --expense: #f87171; --expense-soft: rgba(248,113,113,.14);
+      --warn: #fbbf24; --warn-soft: rgba(251,191,36,.14);
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.35);
+    }
+    /* ---- Ocean ---- */
+    [data-theme="ocean"] {
+      --page-bg: linear-gradient(180deg, #0f766e 0%, #115e59 300px, #ecfeff 300px, #ecfeff 100%);
+      --header-text: #ffffff; --header-muted: #bae6fd;
+      --surface: #ffffff; --surface-alt: #f0fdfa; --border: #ccfbf1;
+      --text: #0f172a; --text-muted: #5b7c8d;
+      --brand: #0891b2; --brand-dark: #0e7490;
+      --income: #059669; --income-soft: #ecfdf5;
+      --expense: #e11d48; --expense-soft: #fff1f2;
+      --warn: #d97706; --warn-soft: #fffbeb;
+      --shadow: 0 1px 2px rgba(8,145,178,.08), 0 4px 16px rgba(8,145,178,.12);
+    }
+    /* ---- Sunset ---- */
+    [data-theme="sunset"] {
+      --page-bg: linear-gradient(180deg, #7c2d12 0%, #9a3412 300px, #fff7ed 300px, #fff7ed 100%);
+      --header-text: #ffffff; --header-muted: #fed7aa;
+      --surface: #ffffff; --surface-alt: #fff7ed; --border: #fed7aa;
+      --text: #431407; --text-muted: #9a6b52;
+      --brand: #ea580c; --brand-dark: #c2410c;
+      --income: #16a34a; --income-soft: #f0fdf4;
+      --expense: #dc2626; --expense-soft: #fef2f2;
+      --warn: #d97706; --warn-soft: #fffbeb;
+      --shadow: 0 1px 2px rgba(234,88,12,.08), 0 4px 16px rgba(234,88,12,.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background: var(--page-bg);
+      background-attachment: fixed; min-height: 100vh; line-height: 1.5;
+      transition: background .25s ease, color .25s ease;
+    }
+    header.app-header { max-width: 1080px; margin: 0 auto; padding: 28px 24px 20px; color: var(--header-text); }
+    header.app-header h1 { margin: 0; font-size: 1.6rem; letter-spacing: -.02em; }
+    header.app-header p { margin: 4px 0 16px; color: var(--header-muted); font-size: .9rem; }
+    .header-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .theme-picker { display: inline-flex; align-items: center; gap: 6px; color: var(--header-muted); font-size: .82rem; font-weight: 600; }
+    .theme-picker select {
+      background: rgba(255,255,255,.1); color: var(--header-text); border: 1px solid rgba(255,255,255,.25);
+      border-radius: 999px; padding: 6px 10px; font-size: .82rem; font-weight: 600; cursor: pointer;
+    }
+    .theme-picker select option { color: #0f172a; }
+
+    .month-nav { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); padding: 6px 8px; border-radius: 999px; }
+    .month-nav a { color: #fff; text-decoration: none; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; font-size: 1rem; }
+    .month-nav a:hover { background: rgba(255,255,255,.18); }
+    .month-nav .current { font-weight: 600; min-width: 130px; text-align: center; }
+
+    main { max-width: 1080px; margin: 0 auto; padding: 0 24px 64px; display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: start; }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
+    .card + .card { margin-top: 24px; }
+    .sidebar > .card + .card { margin-top: 20px; }
+    .card h2 { margin: 0 0 16px; font-size: 1.05rem; letter-spacing: -.01em; }
+    .card h3 { margin: 20px 0 10px; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+    .sidebar { position: sticky; top: 20px; }
+    .dash-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .dash-head h2 { margin: 0; }
+    .month-pill { background: var(--surface-alt); border: 1px solid var(--border); color: var(--text-muted); font-size: .78rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+
+    form.entry-form { display: flex; flex-direction: column; gap: 12px; }
+    .form-row { display: flex; flex-direction: column; gap: 5px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label.field-label { font-size: .78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+    .entry-form input, .entry-form select {
+      width: 100%; padding: 10px 12px; font-size: .95rem; border: 1px solid var(--border);
+      border-radius: 10px; background: var(--surface-alt); color: var(--text);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .entry-form input:focus, .entry-form select:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,.15); background: #fff; }
+
+    .type-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .type-toggle label { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; font-size: .9rem; font-weight: 600; cursor: pointer; background: var(--surface-alt); color: var(--text-muted); user-select: none; }
+    .type-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+    .type-toggle label:has(input[value="expense"]:checked) { background: var(--expense-soft); border-color: var(--expense); color: var(--expense); }
+    .type-toggle label:has(input[value="income"]:checked) { background: var(--income-soft); border-color: var(--income); color: var(--income); }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 16px; font-size: .95rem; font-weight: 600; border: none; border-radius: 10px; cursor: pointer; text-decoration: none; transition: background .15s, transform .05s; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-primary:hover { background: var(--brand-dark); }
+    .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--surface-alt); }
+    .btn-block { width: 100%; }
+    .form-actions { display: flex; gap: 8px; }
+    .form-actions .btn-primary { flex: 1; }
+
+    #form-mode { font-size: 1.05rem; }
+    #form-errors:empty { display: none; }
+    .validation-errors { background: var(--expense-soft); border: 1px solid #fecaca; color: #991b1b; border-radius: 10px; padding: 10px 12px; font-size: .88rem; }
+    .validation-errors ul { margin: 0; padding-left: 18px; }
+
+    .totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0; }
+    .totals .total { padding: 14px; border-radius: 12px; background: var(--surface-alt); border: 1px solid var(--border); }
+    .totals dt { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); font-weight: 600; }
+    .totals dd { margin: 6px 0 0; font-size: 1.35rem; font-weight: 700; letter-spacing: -.02em; }
+    .total-income dd { color: var(--income); } .total-income { background: var(--income-soft); border-color: #a7f3d0; }
+    .total-expense dd { color: var(--expense); } .total-expense { background: var(--expense-soft); border-color: #fecaca; }
+    .net-balance dd.negative { color: var(--expense); } .net-balance dd.positive { color: var(--income); }
+    @media (max-width: 520px) { .totals { grid-template-columns: 1fr; } }
+
+    /* budgets */
+    .budgets { display: flex; flex-direction: column; gap: 12px; }
+    .budget-row { }
+    .budget-top { display: flex; justify-content: space-between; font-size: .9rem; }
+    .budget-cat { font-weight: 600; }
+    .budget-figs { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .budget-bar { height: 8px; background: var(--surface-alt); border-radius: 999px; overflow: hidden; margin: 5px 0; border: 1px solid var(--border); }
+    .budget-fill { height: 100%; background: var(--income); border-radius: 999px; }
+    .budget-row.near .budget-fill { background: var(--warn); }
+    .budget-row.over .budget-fill { background: var(--expense); }
+    .budget-note { font-size: .78rem; color: var(--text-muted); }
+    .budget-row.over .budget-note strong { color: var(--expense); }
+
+    /* chart */
+    .chart { display: flex; flex-direction: column; gap: 8px; }
+    .chart-row { display: grid; grid-template-columns: 110px 1fr 80px; align-items: center; gap: 10px; font-size: .85rem; }
+    .chart-label { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chart-track { background: var(--surface-alt); border-radius: 999px; height: 14px; overflow: hidden; border: 1px solid var(--border); }
+    .chart-bar { display: block; height: 100%; background: linear-gradient(90deg, var(--brand), #6366f1); border-radius: 999px; }
+    .chart-value { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted); }
+
+    /* config lists (budgets & recurring management) */
+    .inline-set { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+    .config-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .config-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: .88rem; padding: 8px 10px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px; }
+    .config-list .meta { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .config-list form { margin: 0; }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 16px; }
+    .toolbar .form-row { flex: 1 1 110px; }
+    .toolbar select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-alt); font-size: .88rem; }
+
+    .totals-unavailable, .no-categories, .empty-state { color: var(--text-muted); font-size: .9rem; padding: 12px; background: var(--surface-alt); border-radius: 10px; text-align: center; }
+
+    .tx-group { margin-bottom: 20px; }
+    .group-label { margin: 0 0 8px; font-size: .95rem; color: var(--text); text-transform: none; letter-spacing: 0; }
+    .group-summary { display: flex; gap: 16px; margin: 0 0 10px; flex-wrap: wrap; }
+    .group-summary .total { display: flex; gap: 6px; font-size: .82rem; color: var(--text-muted); }
+    .group-summary .total dt { font-weight: 600; } .group-summary .total dd { margin: 0; font-variant-numeric: tabular-nums; }
+    .group-summary .total-income dd { color: var(--income); } .group-summary .total-expense dd { color: var(--expense); }
+
+    table.tx-table { width: 100%; border-collapse: collapse; }
+    table.tx-table thead th { text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); padding: 8px 10px; border-bottom: 2px solid var(--border); }
+    table.tx-table thead th.col-amount, table.tx-table thead th.col-actions { text-align: right; }
+    .tx-row td { padding: 10px; border-bottom: 1px solid var(--surface-alt); font-size: .92rem; }
+    .tx-row:hover { background: var(--surface-alt); }
+    .tx-row td.date { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .tx-row td.amount { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+    .tx-row.type-income td.amount { color: var(--income); } .tx-row.type-expense td.amount { color: var(--expense); }
+    .tx-row td.description { color: var(--text-muted); }
+    .tx-row td.actions { text-align: right; white-space: nowrap; }
+
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .72rem; font-weight: 600; text-transform: capitalize; }
+    .badge-income { background: var(--income-soft); color: var(--income); }
+    .badge-expense { background: var(--expense-soft); color: var(--expense); }
+
+    .icon-btn { border: 1px solid var(--border); background: #fff; color: var(--text-muted); border-radius: 8px; padding: 5px 10px; font-size: .8rem; cursor: pointer; font-weight: 600; }
+    .icon-btn:hover { background: var(--surface-alt); color: var(--text); }
+    .icon-btn.danger:hover { background: var(--expense-soft); color: var(--expense); border-color: #fecaca; }
+
+    /* bills */
+    .pill-toggle { display: inline-flex; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px; }
+    .pill-toggle a { text-decoration: none; color: var(--text-muted); font-size: .76rem; font-weight: 600; padding: 5px 12px; border-radius: 999px; }
+    .pill-toggle a.active { background: var(--brand); color: #fff; }
+    .bills-total { display: flex; align-items: baseline; justify-content: space-between; padding: 12px 14px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 14px; }
+    .bills-total span { color: var(--text-muted); font-size: .85rem; }
+    .bills-total strong { font-size: 1.4rem; letter-spacing: -.02em; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>Budget Tracker</h1>
+    <p>Track income and expenses, set budgets, and see where your money goes.</p>
+    <div class="header-controls">
+      <nav class="month-nav">
+        <a href="/?month={{.PrevMonth}}" title="Previous month" aria-label="Previous month">&#8249;</a>
+        <span class="current">{{.MonthLabel}}</span>
+        <a href="/?month={{.NextMonth}}" title="Next month" aria-label="Next month">&#8250;</a>
+      </nav>
+      <label class="theme-picker" for="theme-select">Theme
+        <select id="theme-select" onchange="setTheme(this.value)">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="ocean">Ocean</option>
+          <option value="sunset">Sunset</option>
+        </select>
+      </label>
+    </div>
+  </header>
+  <main>
+    <aside class="sidebar">
+      <section class="card">
+        <h2 id="form-mode">Add transaction</h2>
+        <div id="form-errors"></div>
+        <form id="entry-form" class="entry-form" hx-post="/transactions" hx-target="#log" hx-swap="outerHTML">
+          <input type="hidden" name="month" value="{{.Month}}">
+          <div class="form-row">
+            <span class="field-label">Type</span>
+            <div class="type-toggle">
+              <label><input type="radio" name="type" value="expense" checked> Expense</label>
+              <label><input type="radio" name="type" value="income"> Income</label>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="field-label" for="f-amount">Amount</label>
+              <input id="f-amount" name="amount" type="number" step="0.01" min="0.01" placeholder="0.00" required>
+            </div>
+            <div class="form-row">
+              <label class="field-label" for="f-date">Date</label>
+              <input id="f-date" name="date" type="date" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="field-label" for="f-category">Category</label>
+            <input id="f-category" name="category" type="text" maxlength="100" placeholder="e.g. Groceries"
+                   list="category-options" autocomplete="off" required>
+            {{template "categories" .Categories}}
+          </div>
+          <div class="form-row">
+            <label class="field-label" for="f-description">Description <span style="font-weight:400;text-transform:none">(optional)</span></label>
+            <input id="f-description" name="description" type="text" placeholder="Add a note">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save transaction</button>
+            <button type="button" id="cancel-edit" class="btn btn-ghost" style="display:none" onclick="resetEntryForm()">Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Budgets</h2>
+        <form class="entry-form" method="post" action="/budgets">
+          <input type="hidden" name="month" value="{{.Month}}">
+          <div class="inline-set">
+            <div class="form-row">
+              <label class="field-label" for="b-category">Category</label>
+              <input id="b-category" name="category" type="text" maxlength="100" list="category-options" autocomplete="off" placeholder="Category" required>
+            </div>
+            <div class="form-row">
+              <label class="field-label" for="b-amount">Monthly limit</label>
+              <input id="b-amount" name="amount" type="number" step="0.01" min="0.01" placeholder="0.00" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-ghost btn-block">Set budget</button>
+        </form>
+        {{if .Budgets}}
+        <ul class="config-list">
+          {{range .Budgets}}
+          <li>
+            <span>{{.Category}} <span class="meta">&middot; {{money .LimitCents}}/mo</span></span>
+            <form method="post" action="/budgets/delete">
+              <input type="hidden" name="month" value="{{$.Month}}">
+              <input type="hidden" name="category" value="{{.Category}}">
+              <button type="submit" class="icon-btn danger">Remove</button>
+            </form>
+          </li>
+          {{end}}
+        </ul>
+        {{end}}
+      </section>
+
+      <section class="card">
+        <h2>Recurring</h2>
+        <form class="entry-form" method="post" action="/recurring">
+          <input type="hidden" name="month" value="{{.Month}}">
+          <div class="form-row">
+            <span class="field-label">Type</span>
+            <div class="type-toggle">
+              <label><input type="radio" name="type" value="expense" checked> Expense</label>
+              <label><input type="radio" name="type" value="income"> Income</label>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="field-label" for="r-amount">Amount</label>
+              <input id="r-amount" name="amount" type="number" step="0.01" min="0.01" placeholder="0.00" required>
+            </div>
+            <div class="form-row">
+              <label class="field-label" for="r-day">Day of month</label>
+              <input id="r-day" name="day" type="number" min="1" max="31" placeholder="1" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="field-label" for="r-category">Category</label>
+            <input id="r-category" name="category" type="text" maxlength="100" list="category-options" autocomplete="off" placeholder="e.g. Rent" required>
+          </div>
+          <div class="form-row">
+            <label class="field-label" for="r-description">Description <span style="font-weight:400;text-transform:none">(optional)</span></label>
+            <input id="r-description" name="description" type="text" placeholder="Add a note">
+          </div>
+          <button type="submit" class="btn btn-ghost btn-block">Add recurring rule</button>
+        </form>
+        {{if .Recurring}}
+        <ul class="config-list">
+          {{range .Recurring}}
+          <li>
+            <span>Day {{.DayOfMonth}} <span class="meta">&middot; {{.Category}} &middot; {{.Type}} {{money .AmountCents}}</span></span>
+            <form method="post" action="/recurring/delete">
+              <input type="hidden" name="month" value="{{$.Month}}">
+              <input type="hidden" name="id" value="{{.ID}}">
+              <button type="submit" class="icon-btn danger">Remove</button>
+            </form>
+          </li>
+          {{end}}
+        </ul>
+        <form method="post" action="/recurring/post" style="margin-top:12px">
+          <input type="hidden" name="month" value="{{.Month}}">
+          <button type="submit" class="btn btn-ghost btn-block">Post {{.MonthLabel}} recurring</button>
+        </form>
+        {{end}}
+      </section>
+
+      <section class="card">
+        <h2>Bill Payees</h2>
+        <form class="entry-form" method="post" action="/bills">
+          <input type="hidden" name="month" value="{{.Month}}">
+          <input type="hidden" name="billperiod" value="{{.BillPeriod}}">
+          <div class="form-row">
+            <label class="field-label" for="bp-payee">Payee</label>
+            <input id="bp-payee" name="payee" type="text" maxlength="100" placeholder="e.g. Electric Company" required>
+          </div>
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="field-label" for="bp-amount">Amount</label>
+              <input id="bp-amount" name="amount" type="number" step="0.01" min="0.01" placeholder="0.00" required>
+            </div>
+            <div class="form-row">
+              <label class="field-label" for="bp-freq">Frequency</label>
+              <select id="bp-freq" name="frequency">
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Every 2 weeks</option>
+                <option value="monthly" selected>Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="field-label" for="bp-category">Category</label>
+              <input id="bp-category" name="category" type="text" maxlength="100" list="category-options" autocomplete="off" placeholder="Optional">
+            </div>
+            <div class="form-row">
+              <label class="field-label" for="bp-day">Due day</label>
+              <input id="bp-day" name="due_day" type="number" min="1" max="31" placeholder="Optional">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-ghost btn-block">Add bill</button>
+        </form>
+        {{if .Bills.Items}}
+        <ul class="config-list">
+          {{range .Bills.Items}}
+          <li>
+            <span>{{.Bill.Payee}} <span class="meta">&middot; {{.Bill.Frequency.Label}} &middot; {{money .Bill.AmountCents}}</span></span>
+            <form method="post" action="/bills/delete">
+              <input type="hidden" name="month" value="{{$.Month}}">
+              <input type="hidden" name="billperiod" value="{{$.BillPeriod}}">
+              <input type="hidden" name="id" value="{{.Bill.ID}}">
+              <button type="submit" class="icon-btn danger">Remove</button>
+            </form>
+          </li>
+          {{end}}
+        </ul>
+        {{end}}
+      </section>
+    </aside>
+
+    <div class="content">
+      {{template "dashboard" .Dashboard}}
+
+      <section class="card">
+        <div class="dash-head">
+          <h2>Bills</h2>
+          <div class="pill-toggle">
+            <a class="{{if eq .BillPeriod "week"}}active{{end}}" href="/?month={{.Month}}&amp;billperiod=week">Weekly</a>
+            <a class="{{if eq .BillPeriod "month"}}active{{end}}" href="/?month={{.Month}}&amp;billperiod=month">Monthly</a>
+            <a class="{{if eq .BillPeriod "year"}}active{{end}}" href="/?month={{.Month}}&amp;billperiod=year">Yearly</a>
+          </div>
+        </div>
+        <div class="bills-total">
+          <span>Estimated {{.Bills.Period.Label}} bills</span>
+          <strong>{{money .Bills.TotalCents}}</strong>
+        </div>
+        {{if .Bills.Items}}
+        <table class="tx-table">
+          <thead>
+            <tr>
+              <th>Payee</th>
+              <th>Frequency</th>
+              <th>Category</th>
+              <th class="col-amount">{{.Bills.Period.Label}}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .Bills.Items}}
+            <tr class="tx-row">
+              <td>{{.Bill.Payee}}</td>
+              <td>{{.Bill.Frequency.Label}}</td>
+              <td class="description">{{.Bill.Category}}</td>
+              <td class="amount">{{money .PeriodCents}}</td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+        {{else}}
+        <p class="empty-state">No bills yet. Add a payee in the sidebar to see your recurring costs.</p>
+        {{end}}
+      </section>
+
+      <section class="card">
+        <h2>Transaction Log</h2>
+        <form class="toolbar" hx-get="/transactions" hx-target="#log" hx-swap="outerHTML" hx-trigger="change">
+          <input type="hidden" name="month" value="{{.Month}}">
+          <div class="form-row">
+            <label class="field-label" for="c-period">Group by</label>
+            <select id="c-period" name="period">
+              <option value="month" selected>Month</option>
+              <option value="week">Week</option>
+              <option value="day">Day</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="field-label" for="c-type">Show</label>
+            <select id="c-type" name="type">
+              <option value="">All</option>
+              <option value="expense">Expenses</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="field-label" for="c-sort">Sort by</label>
+            <select id="c-sort" name="sort">
+              <option value="date" selected>Date</option>
+              <option value="amount">Amount</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="field-label" for="c-dir">Order</label>
+            <select id="c-dir" name="dir">
+              <option value="desc" selected>Descending</option>
+              <option value="asc">Ascending</option>
+            </select>
+          </div>
+        </form>
+        {{template "log" .Log}}
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // Theme selection: apply to <html> and persist so it survives HTMX swaps
+    // and reloads.
+    function setTheme(t) {
+      document.documentElement.setAttribute('data-theme', t);
+      try { localStorage.setItem('bt-theme', t); } catch (e) {}
+    }
+    (function () {
+      var t = 'light';
+      try { t = localStorage.getItem('bt-theme') || 'light'; } catch (e) {}
+      var s = document.getElementById('theme-select');
+      if (s) { s.value = t; }
+    })();
+
+    function setToday() {
+      var d = document.getElementById('f-date');
+      if (d && !d.value) { d.value = new Date().toISOString().slice(0, 10); }
+    }
+    setToday();
+
+    function resetEntryForm() {
+      var f = document.getElementById('entry-form');
+      f.reset();
+      f.setAttribute('hx-post', '/transactions');
+      htmx.process(f);
+      document.getElementById('form-mode').textContent = 'Add transaction';
+      document.getElementById('cancel-edit').style.display = 'none';
+      var fe = document.getElementById('form-errors'); if (fe) fe.innerHTML = '';
+      setToday();
+    }
+
+    function startEdit(btn) {
+      var r = btn.closest('tr');
+      var f = document.getElementById('entry-form');
+      f.querySelector('input[name="amount"]').value = r.dataset.amount;
+      f.querySelector('input[name="date"]').value = r.dataset.date;
+      f.querySelector('input[name="category"]').value = r.dataset.category;
+      f.querySelector('input[name="description"]').value = r.dataset.description || '';
+      var typeInput = f.querySelector('input[name="type"][value="' + r.dataset.type + '"]');
+      if (typeInput) { typeInput.checked = true; }
+      f.setAttribute('hx-post', '/transactions/' + r.dataset.id);
+      htmx.process(f);
+      document.getElementById('form-mode').textContent = 'Edit transaction #' + r.dataset.id;
+      document.getElementById('cancel-edit').style.display = '';
+      f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    document.body.addEventListener('htmx:beforeSwap', function (evt) {
+      if (evt.detail.xhr.status === 422) {
+        evt.detail.shouldSwap = true;
+        evt.detail.target = document.getElementById('form-errors');
+        evt.detail.isError = false;
+      }
+    });
+
+    document.body.addEventListener('htmx:afterRequest', function (evt) {
+      var f = document.getElementById('entry-form');
+      if (evt.detail.elt === f && evt.detail.successful && evt.detail.xhr.status === 200) {
+        resetEntryForm();
+      }
+    });
+  </script>
+</body>
+</html>
+{{end}}

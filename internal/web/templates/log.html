@@ -1,0 +1,65 @@
+{{define "log"}}
+<section id="log" class="log">
+  {{if .Grouped}}
+    {{if .Groups}}
+      {{range .Groups}}
+      <div class="tx-group">
+        <h3 class="group-label">{{.Label}}</h3>
+        <dl class="group-summary">
+          {{if $.TotalsUnavailable}}
+          <span class="totals-unavailable" role="alert">Totals are currently unavailable.</span>
+          {{else}}
+          <div class="total total-income"><dt>Income</dt><dd>{{money .Summary.TotalIncomeCents}}</dd></div>
+          <div class="total total-expense"><dt>Expense</dt><dd>{{money .Summary.TotalExpenseCents}}</dd></div>
+          <div class="total net-balance"><dt>Net</dt><dd>{{money .Summary.NetBalanceCents}}</dd></div>
+          {{end}}
+        </dl>
+        {{template "txTable" .Items}}
+      </div>
+      {{end}}
+    {{else}}
+    <p class="empty-state">No transactions for this period.</p>
+    {{end}}
+  {{else}}
+    {{if .Items}}
+    {{template "txTable" .Items}}
+    {{else}}
+    <p class="empty-state">No transactions yet. Add one using the form.</p>
+    {{end}}
+  {{end}}
+</section>
+{{end}}
+
+{{define "txTable"}}
+<table class="tx-table">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Type</th>
+      <th>Category</th>
+      <th>Description</th>
+      <th class="col-amount">Amount</th>
+      <th class="col-actions"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range .}}
+    <tr class="tx-row type-{{.Type}}" data-id="{{.ID}}" data-type="{{.Type}}"
+        data-amount="{{money .AmountCents}}" data-date="{{isodate .Date}}"
+        data-category="{{.Category}}" data-description="{{.Description}}">
+      <td class="date">{{isodate .Date}}</td>
+      <td class="type"><span class="badge badge-{{.Type}}">{{.Type}}</span></td>
+      <td class="category">{{.Category}}</td>
+      <td class="description">{{.Description}}</td>
+      <td class="amount">{{money .AmountCents}}</td>
+      <td class="actions">
+        <button type="button" class="icon-btn" onclick="startEdit(this)">Edit</button>
+        <button type="button" class="icon-btn danger"
+                hx-delete="/transactions/{{.ID}}" hx-target="#log" hx-swap="outerHTML"
+                hx-confirm="Delete this transaction?">Delete</button>
+      </td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{end}}

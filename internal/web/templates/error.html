@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Something went wrong</title>
+</head>
+<body>
+  <main class="error-page" role="alert">
+    <h1>Something went wrong</h1>
+    <p class="error-message">
+      {{if .Message}}{{.Message}}{{else}}The operation could not be completed and the page could not be loaded. Please try again.{{end}}
+    </p>
+    <p><a href="/">Return to the dashboard</a></p>
+  </main>
+</body>
+</html>
