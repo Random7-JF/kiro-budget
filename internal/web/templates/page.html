@@ -39,30 +39,7 @@
       --expense: #f87171; --expense-soft: rgba(248,113,113,.14);
       --warn: #fbbf24; --warn-soft: rgba(251,191,36,.14);
       --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.35);
-    }
-    /* ---- Ocean ---- */
-    [data-theme="ocean"] {
-      --page-bg: linear-gradient(180deg, #0f766e 0%, #115e59 300px, #ecfeff 300px, #ecfeff 100%);
-      --header-text: #ffffff; --header-muted: #bae6fd;
-      --surface: #ffffff; --surface-alt: #f0fdfa; --border: #ccfbf1;
-      --text: #0f172a; --text-muted: #5b7c8d;
-      --brand: #0891b2; --brand-dark: #0e7490;
-      --income: #059669; --income-soft: #ecfdf5;
-      --expense: #e11d48; --expense-soft: #fff1f2;
-      --warn: #d97706; --warn-soft: #fffbeb;
-      --shadow: 0 1px 2px rgba(8,145,178,.08), 0 4px 16px rgba(8,145,178,.12);
-    }
-    /* ---- Sunset ---- */
-    [data-theme="sunset"] {
-      --page-bg: linear-gradient(180deg, #7c2d12 0%, #9a3412 300px, #fff7ed 300px, #fff7ed 100%);
-      --header-text: #ffffff; --header-muted: #fed7aa;
-      --surface: #ffffff; --surface-alt: #fff7ed; --border: #fed7aa;
-      --text: #431407; --text-muted: #9a6b52;
-      --brand: #ea580c; --brand-dark: #c2410c;
-      --income: #16a34a; --income-soft: #f0fdf4;
-      --expense: #dc2626; --expense-soft: #fef2f2;
-      --warn: #d97706; --warn-soft: #fffbeb;
-      --shadow: 0 1px 2px rgba(234,88,12,.08), 0 4px 16px rgba(234,88,12,.12);
+      --input-focus-bg: #1e293b;
     }
     * { box-sizing: border-box; }
     body {
@@ -115,7 +92,7 @@
       border-radius: 10px; background: var(--surface-alt); color: var(--text);
       transition: border-color .15s, box-shadow .15s;
     }
-    .entry-form input:focus, .entry-form select:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,.15); background: #fff; }
+    .entry-form input:focus, .entry-form select:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,.15); background: var(--input-focus-bg, #fff); }
 
     .type-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .type-toggle label { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; font-size: .9rem; font-weight: 600; cursor: pointer; background: var(--surface-alt); color: var(--text-muted); user-select: none; }
@@ -230,12 +207,10 @@
         <select id="theme-select" onchange="setTheme(this.value)">
           <option value="light">Light</option>
           <option value="dark">Dark</option>
-          <option value="ocean">Ocean</option>
-          <option value="sunset">Sunset</option>
         </select>
       </label>
       {{if .Username}}
-      <span class="who">{{.Username}}</span>
+      <span class="who">Welcome, {{.DisplayName}}</span>
       <form method="post" action="/logout" class="logout-form">
         <button type="submit" class="logout-btn">Log out</button>
       </form>

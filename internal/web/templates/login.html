@@ -12,45 +12,63 @@
       background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); color: #0f172a;
     }
     .login-card {
-      background: #fff; width: 360px; max-width: calc(100vw - 32px);
-      border-radius: 16px; padding: 28px; box-shadow: 0 10px 40px rgba(0,0,0,.35);
+      background: #fff; width: 380px; max-width: calc(100vw - 32px);
+      border-radius: 16px; padding: 32px; box-shadow: 0 10px 40px rgba(0,0,0,.35);
     }
-    .login-card h1 { margin: 0; font-size: 1.4rem; letter-spacing: -.02em; }
-    .login-card .sub { margin: 4px 0 20px; color: #64748b; font-size: .9rem; }
+    .login-card h1 { margin: 0; font-size: 1.5rem; letter-spacing: -.02em; font-weight: 700; }
+    .login-card .sub { margin: 6px 0 24px; color: #64748b; font-size: .92rem; line-height: 1.4; }
     .login-error {
       background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
-      border-radius: 10px; padding: 10px 12px; font-size: .88rem; margin: 0 0 16px;
+      border-radius: 10px; padding: 12px 14px; font-size: .88rem; margin: 0 0 20px;
+      line-height: 1.5;
     }
-    form { display: flex; flex-direction: column; gap: 14px; }
-    label { display: flex; flex-direction: column; gap: 6px; font-size: .78rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+    form { display: flex; flex-direction: column; gap: 16px; }
+    .form-field { display: flex; flex-direction: column; }
+    label { font-size: .78rem; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
     input {
-      padding: 11px 12px; font-size: .95rem; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; color: #0f172a;
+      padding: 12px 14px; font-size: .95rem; border: 1px solid #e2e8f0; border-radius: 10px;
+      background: #f8fafc; color: #0f172a;
+      transition: border-color .15s, box-shadow .15s, background .15s;
     }
-    input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.15); background: #fff; }
+    input:focus {
+      outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.12); background: #fff;
+    }
+    input::placeholder { color: #94a3b8; }
     button {
-      margin-top: 4px; padding: 12px; font-size: .95rem; font-weight: 600; color: #fff;
+      margin-top: 8px; padding: 14px; font-size: .98rem; font-weight: 600; color: #fff;
       background: #4f46e5; border: none; border-radius: 10px; cursor: pointer;
+      transition: background .15s, transform .05s;
     }
     button:hover { background: #4338ca; }
-    .login-hint { margin: 18px 0 0; font-size: .82rem; color: #94a3b8; text-align: center; }
-    .login-hint code { background: #f1f5f9; padding: 1px 6px; border-radius: 6px; color: #334155; }
+    button:active { transform: translateY(1px); }
+    .login-hint {
+      margin: 20px 0 0; font-size: .82rem; color: #94a3b8; text-align: center;
+      padding-top: 20px; border-top: 1px solid #f1f5f9;
+    }
+    .login-hint code { background: #f1f5f9; padding: 2px 8px; border-radius: 6px; color: #334155; font-size: .8rem; }
+    .register-link { margin: 12px 0 0; font-size: .88rem; color: #64748b; text-align: center; }
+    .register-link a { color: #4f46e5; text-decoration: none; font-weight: 600; }
+    .register-link a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
   <main class="login-card">
-    <h1>Budget Tracker</h1>
-    <p class="sub">Sign in to continue</p>
-    {{if .Error}}<p class="login-error" role="alert">{{.Error}}</p>{{end}}
+    <h1>Welcome back</h1>
+    <p class="sub">Sign in to your account to continue.</p>
+    {{if .Error}}<div class="login-error" role="alert">{{.Error}}</div>{{end}}
     <form method="post" action="/login">
-      <label for="l-username">Username
-        <input id="l-username" name="username" type="text" autocomplete="username" autofocus required>
-      </label>
-      <label for="l-password">Password
-        <input id="l-password" name="password" type="password" autocomplete="current-password" required>
-      </label>
+      <div class="form-field">
+        <label for="l-username">Username</label>
+        <input id="l-username" name="username" type="text" autocomplete="username" autofocus required placeholder="Your username">
+      </div>
+      <div class="form-field">
+        <label for="l-password">Password</label>
+        <input id="l-password" name="password" type="password" autocomplete="current-password" required placeholder="Your password">
+      </div>
       <button type="submit">Sign in</button>
     </form>
     <p class="login-hint">Demo account: <code>test</code> / <code>password123</code></p>
+    <p class="register-link">New here? <a href="/register">Create an account</a></p>
   </main>
 </body>
 </html>

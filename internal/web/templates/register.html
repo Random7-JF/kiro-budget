@@ -1,0 +1,162 @@
+{{define "register"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create account &middot; Budget Tracker</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); color: #0f172a;
+    }
+    .card {
+      background: #fff; width: 420px; max-width: calc(100vw - 32px);
+      border-radius: 16px; padding: 32px; box-shadow: 0 10px 40px rgba(0,0,0,.35);
+    }
+    .card h1 { margin: 0; font-size: 1.5rem; letter-spacing: -.02em; font-weight: 700; }
+    .card .sub { margin: 6px 0 24px; color: #64748b; font-size: .92rem; line-height: 1.4; }
+    .error-box {
+      background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
+      border-radius: 10px; padding: 12px 14px; font-size: .88rem; margin: 0 0 20px;
+      line-height: 1.5;
+    }
+    form { display: flex; flex-direction: column; gap: 16px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-field { display: flex; flex-direction: column; }
+    label { font-size: .78rem; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+    input {
+      padding: 12px 14px; font-size: .95rem; border: 1px solid #e2e8f0;
+      border-radius: 10px; background: #f8fafc; color: #0f172a;
+      transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+    input:focus {
+      outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.12); background: #fff;
+    }
+    input::placeholder { color: #94a3b8; }
+    button[type="submit"] {
+      margin-top: 8px; padding: 14px; font-size: .98rem; font-weight: 600; color: #fff;
+      background: #4f46e5; border: none; border-radius: 10px; cursor: pointer;
+      transition: background .15s, transform .05s;
+    }
+    button[type="submit"]:hover { background: #4338ca; }
+    button[type="submit"]:active { transform: translateY(1px); }
+    .divider { border: none; border-top: 1px solid #e2e8f0; margin: 8px 0; }
+    .login-link {
+      margin: 20px 0 0; font-size: .88rem; color: #64748b; text-align: center;
+      padding-top: 20px; border-top: 1px solid #f1f5f9;
+    }
+    .login-link a { color: #4f46e5; text-decoration: none; font-weight: 600; }
+    .login-link a:hover { text-decoration: underline; }
+    .help-text {
+      font-size: .8rem; color: #64748b; margin: 6px 0 0; line-height: 1.4;
+    }
+    .password-strength {
+      height: 4px; background: #e2e8f0; border-radius: 999px; margin: 8px 0 0;
+      overflow: hidden; transition: opacity .2s;
+    }
+    .password-strength-bar {
+      height: 100%; background: #94a3b8; border-radius: 999px;
+      transition: width .3s, background .3s;
+    }
+    .password-strength.weak .password-strength-bar { width: 33%; background: #ef4444; }
+    .password-strength.medium .password-strength-bar { width: 66%; background: #f59e0b; }
+    .password-strength.strong .password-strength-bar { width: 100%; background: #10b981; }
+    .strength-label {
+      font-size: .75rem; color: #64748b; margin: 4px 0 0; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+    .strength-label.weak { color: #ef4444; }
+    .strength-label.medium { color: #f59e0b; }
+    .strength-label.strong { color: #10b981; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Create your account</h1>
+    <p class="sub">Start tracking your budget in seconds.</p>
+    {{if .Error}}<div class="error-box" role="alert">{{.Error}}</div>{{end}}
+    <form method="post" action="/register" autocomplete="on">
+      <div class="form-row">
+        <div class="form-field">
+          <label for="r-first">First name</label>
+          <input id="r-first" name="first_name" type="text" autocomplete="given-name"
+                 value="{{.FirstName}}" autofocus required maxlength="100" placeholder="Jon">
+        </div>
+        <div class="form-field">
+          <label for="r-last">Last name</label>
+          <input id="r-last" name="last_name" type="text" autocomplete="family-name"
+                 value="{{.LastName}}" required maxlength="100" placeholder="Doe">
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="r-email">Email address</label>
+        <input id="r-email" name="email" type="email" autocomplete="email"
+               value="{{.Email}}" required maxlength="254" placeholder="you@example.com">
+      </div>
+      <hr class="divider">
+      <div class="form-field">
+        <label for="r-username">Username</label>
+        <input id="r-username" name="username" type="text" autocomplete="username"
+               value="{{.Username}}" required minlength="2" maxlength="50"
+               pattern="[A-Za-z0-9_\-]+" title="Letters, numbers, hyphens, and underscores only"
+               placeholder="Choose a username">
+        <p class="help-text">Letters, numbers, hyphens, and underscores only.</p>
+      </div>
+      <div class="form-field">
+        <label for="r-password">Password</label>
+        <input id="r-password" name="password" type="password" autocomplete="new-password"
+               required minlength="8" placeholder="At least 8 characters">
+        <div id="password-strength" class="password-strength" style="opacity: 0;">
+          <div class="password-strength-bar"></div>
+        </div>
+        <div id="strength-label" class="strength-label" style="opacity: 0;"></div>
+      </div>
+      <button type="submit">Create account</button>
+    </form>
+    <p class="login-link">Already have an account? <a href="/login">Sign in</a></p>
+  </main>
+  <script>
+    const pwd = document.getElementById('r-password');
+    const strength = document.getElementById('password-strength');
+    const strengthBar = strength.querySelector('.password-strength-bar');
+    const label = document.getElementById('strength-label');
+
+    pwd.addEventListener('input', function() {
+      const val = this.value;
+      if (val.length === 0) {
+        strength.style.opacity = '0';
+        label.style.opacity = '0';
+        return;
+      }
+      strength.style.opacity = '1';
+      label.style.opacity = '1';
+
+      let score = 0;
+      if (val.length >= 8) score++;
+      if (val.length >= 12) score++;
+      if (/[a-z]/.test(val) && /[A-Z]/.test(val)) score++;
+      if (/\d/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+
+      strength.className = 'password-strength';
+      label.className = 'strength-label';
+      if (score <= 2) {
+        strength.classList.add('weak');
+        label.classList.add('weak');
+        label.textContent = 'Weak password';
+      } else if (score <= 3) {
+        strength.classList.add('medium');
+        label.classList.add('medium');
+        label.textContent = 'Medium strength';
+      } else {
+        strength.classList.add('strong');
+        label.classList.add('strong');
+        label.textContent = 'Strong password';
+      }
+    });
+  </script>
+</body>
+</html>
+{{end}}
