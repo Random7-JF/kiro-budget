@@ -97,6 +97,8 @@ func (s *Server) Routes() stdhttp.Handler {
 	mux.HandleFunc("GET /login", s.handleLoginForm)
 	mux.HandleFunc("POST /login", s.handleLogin)
 	mux.HandleFunc("POST /logout", s.handleLogout)
+	mux.HandleFunc("GET /register", s.handleRegisterForm)
+	mux.HandleFunc("POST /register", s.handleRegister)
 	return mux
 }
 
@@ -250,7 +252,8 @@ func (s *Server) handleRoot(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 	billPeriod := budget.ParseBillPeriod(r.URL.Query().Get("billperiod"))
 
 	view := web.PageView{
-		Username:  userFrom(r.Context()).Username,
+		Username:    userFrom(r.Context()).Username,
+		DisplayName: userFrom(r.Context()).DisplayName(),
 		Dashboard: dash,
 		Log: web.LogView{
 			Grouped: true,

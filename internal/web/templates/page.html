@@ -17,8 +17,12 @@
   <style>
     /* ---- Light (default) ---- */
     :root {
-      --page-bg: linear-gradient(180deg, #0f172a 0%, #1e293b 300px, #eef2f7 300px, #eef2f7 100%);
-      --header-text: #ffffff; --header-muted: #cbd5e1;
+      --page-bg: 
+        radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(79, 70, 229, 0.06) 0%, transparent 40%),
+        linear-gradient(180deg, #3f3f55 0%, #2a2a3e 100%);
+      --header-text: #e2e8f0; --header-muted: #94a3b8;
       --surface: #ffffff; --surface-alt: #f8fafc; --border: #e2e8f0;
       --text: #0f172a; --text-muted: #64748b;
       --brand: #4f46e5; --brand-dark: #4338ca;
@@ -30,7 +34,11 @@
     }
     /* ---- Dark ---- */
     [data-theme="dark"] {
-      --page-bg: #0b1120;
+      --page-bg: 
+        radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.06) 0%, transparent 60%),
+        linear-gradient(180deg, #1a1a2e 0%, #16161f 100%);
       --header-text: #e2e8f0; --header-muted: #94a3b8;
       --surface: #1e293b; --surface-alt: #0f172a; --border: #334155;
       --text: #e2e8f0; --text-muted: #94a3b8;
@@ -56,18 +64,18 @@
     .header-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .theme-picker { display: inline-flex; align-items: center; gap: 6px; color: var(--header-muted); font-size: .82rem; font-weight: 600; }
     .theme-picker select {
-      background: rgba(255,255,255,.1); color: var(--header-text); border: 1px solid rgba(255,255,255,.25);
+      background: rgba(255,255,255,.12); color: var(--header-text); border: 1px solid rgba(255,255,255,.2);
       border-radius: 999px; padding: 6px 10px; font-size: .82rem; font-weight: 600; cursor: pointer;
     }
     .theme-picker select option { color: #0f172a; }
     .who { color: var(--header-text); font-size: .85rem; font-weight: 600; }
     .logout-form { margin: 0; }
-    .logout-btn { background: rgba(255,255,255,.1); color: var(--header-text); border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 6px 12px; font-size: .82rem; font-weight: 600; cursor: pointer; }
+    .logout-btn { background: rgba(255,255,255,.12); color: var(--header-text); border: 1px solid rgba(255,255,255,.2); border-radius: 999px; padding: 6px 12px; font-size: .82rem; font-weight: 600; cursor: pointer; }
     .logout-btn:hover { background: rgba(255,255,255,.2); }
 
-    .month-nav { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); padding: 6px 8px; border-radius: 999px; }
-    .month-nav a { color: #fff; text-decoration: none; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; font-size: 1rem; }
-    .month-nav a:hover { background: rgba(255,255,255,.18); }
+    .month-nav { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); padding: 6px 8px; border-radius: 999px; }
+    .month-nav a { color: var(--header-text); text-decoration: none; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; font-size: 1rem; }
+    .month-nav a:hover { background: rgba(255,255,255,.15); }
     .month-nav .current { font-weight: 600; min-width: 130px; text-align: center; }
 
     main { max-width: 1080px; margin: 0 auto; padding: 0 24px 64px; display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: start; }

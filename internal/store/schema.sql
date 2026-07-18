@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS users (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     username      TEXT    NOT NULL UNIQUE COLLATE NOCASE,
     password_hash TEXT    NOT NULL,
+    first_name    TEXT    NOT NULL DEFAULT '',
+    last_name     TEXT    NOT NULL DEFAULT '',
+    email         TEXT    NOT NULL DEFAULT '',
     created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
