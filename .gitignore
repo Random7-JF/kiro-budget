@@ -7,7 +7,7 @@ budget.db-shm
 *.sqlite-wal
 
 # Build output
-/bin/
+/bin/*
 *.exe
 *.exe~
 

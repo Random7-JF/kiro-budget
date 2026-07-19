@@ -91,6 +91,20 @@ func (r *Repo) migrate(ctx context.Context) error {
 		}
 	}
 
+	// Migrate users table: add profile columns if absent (added in v2).
+	for _, col := range []string{"first_name", "last_name", "email"} {
+		hasCol, err := r.hasColumn(ctx, "users", col)
+		if err != nil {
+			return err
+		}
+		if !hasCol {
+			stmt := fmt.Sprintf("ALTER TABLE users ADD COLUMN %s TEXT NOT NULL DEFAULT ''", col)
+			if _, err := r.db.ExecContext(ctx, stmt); err != nil {
+				return fmt.Errorf("add %s to users: %w", col, err)
+			}
+		}
+	}
+
 	has, err := r.hasColumn(ctx, "budgets", "user_id")
 	if err != nil {
 		return err

@@ -95,11 +95,14 @@ type LogView struct {
 // and log view models rendered by the "dashboard" and "log" fragments, plus the
 // category suggestions rendered by the "categories" datalist fragment.
 type PageView struct {
-	// Username of the signed-in user, shown in the header.
-	Username   string
-	Dashboard  DashboardView
-	Log        LogView
-	Categories []string
+	// Username of the signed-in user, used for the session/logout controls.
+	Username string
+	// DisplayName is the user's full name (or username as fallback), shown in
+	// the "Welcome" greeting in the header.
+	DisplayName string
+	Dashboard   DashboardView
+	Log         LogView
+	Categories  []string
 	// Month scoping and navigation.
 	Month      string // "2026-07" for hidden fields / links
 	MonthLabel string // "July 2026"
@@ -121,6 +124,18 @@ type PageView struct {
 type LoginView struct {
 	// Error is an optional message shown above the form (e.g. bad credentials).
 	Error string
+}
+
+// RegisterView is the view model for the registration page.
+type RegisterView struct {
+	// Error is an optional message shown above the form (e.g. username taken).
+	Error string
+	// Fields holds the previously submitted values so the form can be
+	// repopulated after a validation failure.
+	FirstName string
+	LastName  string
+	Email     string
+	Username  string
 }
 
 // Render executes the named template ("page", "dashboard", "log", or "login")

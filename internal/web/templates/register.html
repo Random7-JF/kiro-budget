@@ -24,10 +24,10 @@
     }
     form { display: flex; flex-direction: column; gap: 16px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .form-field { display: flex; flex-direction: column; }
+    .form-field { display: flex; flex-direction: column; min-width: 0; }
     label { font-size: .78rem; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
     input {
-      padding: 12px 14px; font-size: .95rem; border: 1px solid #e2e8f0;
+      width: 100%; padding: 12px 14px; font-size: .95rem; border: 1px solid #e2e8f0;
       border-radius: 10px; background: #f8fafc; color: #0f172a;
       transition: border-color .15s, box-shadow .15s, background .15s;
     }
@@ -70,6 +70,9 @@
     .strength-label.weak { color: #ef4444; }
     .strength-label.medium { color: #f59e0b; }
     .strength-label.strong { color: #10b981; }
+    .password-match-error {
+      font-size: .8rem; color: #ef4444; margin: 6px 0 0; display: none;
+    }
   </style>
 </head>
 <body>
@@ -77,7 +80,7 @@
     <h1>Create your account</h1>
     <p class="sub">Start tracking your budget in seconds.</p>
     {{if .Error}}<div class="error-box" role="alert">{{.Error}}</div>{{end}}
-    <form method="post" action="/register" autocomplete="on">
+    <form method="post" action="/register" autocomplete="on" id="register-form">
       <div class="form-row">
         <div class="form-field">
           <label for="r-first">First name</label>
@@ -113,15 +116,24 @@
         </div>
         <div id="strength-label" class="strength-label" style="opacity: 0;"></div>
       </div>
+      <div class="form-field">
+        <label for="r-password-confirm">Confirm password</label>
+        <input id="r-password-confirm" name="password_confirm" type="password" autocomplete="new-password"
+               required minlength="8" placeholder="Re-enter your password">
+        <p id="password-match-error" class="password-match-error">Passwords do not match</p>
+      </div>
       <button type="submit">Create account</button>
     </form>
     <p class="login-link">Already have an account? <a href="/login">Sign in</a></p>
   </main>
   <script>
     const pwd = document.getElementById('r-password');
+    const pwdConfirm = document.getElementById('r-password-confirm');
     const strength = document.getElementById('password-strength');
     const strengthBar = strength.querySelector('.password-strength-bar');
     const label = document.getElementById('strength-label');
+    const matchError = document.getElementById('password-match-error');
+    const form = document.getElementById('register-form');
 
     pwd.addEventListener('input', function() {
       const val = this.value;
@@ -154,6 +166,26 @@
         strength.classList.add('strong');
         label.classList.add('strong');
         label.textContent = 'Strong password';
+      }
+      
+      checkPasswordMatch();
+    });
+
+    pwdConfirm.addEventListener('input', checkPasswordMatch);
+
+    function checkPasswordMatch() {
+      if (pwdConfirm.value && pwd.value !== pwdConfirm.value) {
+        matchError.style.display = 'block';
+      } else {
+        matchError.style.display = 'none';
+      }
+    }
+
+    form.addEventListener('submit', function(e) {
+      if (pwd.value !== pwdConfirm.value) {
+        e.preventDefault();
+        matchError.style.display = 'block';
+        pwdConfirm.focus();
       }
     });
   </script>
